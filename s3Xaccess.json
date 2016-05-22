@@ -1,0 +1,61 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "CF S3 cross account access.",
+
+  "Parameters" : {
+    "bucketName" : {
+      "Description" : "Bucket_Name",
+      "Type" : "String",
+      "Default" : "noonehasthisbucketname"
+    },
+    "remoteArn" : {
+      "Description" : "remote aws account arn",
+      "Type" : "String",
+      "Default" :  "arn:aws:iam::111122223333:role/EC2XS3"
+    } 
+  },
+  
+  "Resources" : {
+	"S3Bucket" : {
+		"Type" : "AWS::S3::Bucket",
+		"DeletionPolicy" : "Retain",
+		"Properties" : {
+			"BucketName" : { "Ref" : "bucketName" }
+		}
+	},
+	"BucketPolicy" : {
+		"Type" : "AWS::S3::BucketPolicy",
+		"Properties" : {
+		"PolicyDocument": {
+			"Id"           : "Give access to user",
+			"Statement"    : [{
+				"Sid"        : "AllAccess",
+				"Action"     : [
+					"s3:Get*",
+					"s3:List*"
+				],
+				"Effect"     : "Allow",
+				"Resource" : [
+					{ "Fn::Join" : ["", ["arn:aws:s3:::",{ "Ref" : "S3Bucket" } ]] },
+					{ "Fn::Join" : ["", ["arn:aws:s3:::",{ "Ref" : "S3Bucket" }, "/*"]] }
+				],
+				"Principal"  : { "AWS": { "Ref" : "remoteArn" }}
+			}]
+		},
+		"Bucket" : {"Ref" : "S3Bucket"}
+		}
+	}
+  },
+  
+  "Outputs" : {
+    "S3Bucket" : {
+      "Description" : "S3Bucket",
+      "Value" : {"Ref" : "S3Bucket"}
+    },
+	 "BucketPolicy" : {
+      "Description" : "BucketPolicy",
+      "Value" : {"Ref" : "BucketPolicy"}
+    }
+  }
+}
